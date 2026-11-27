@@ -41,6 +41,7 @@ enum Page {
     Detail,
 }
 
+#[allow(dead_code)]
 struct Picker {
     anime: Anime,
     episode: Episode,
@@ -61,6 +62,9 @@ pub struct AniLinux {
     catalog: Catalog,
     detail: Option<Anime>,
     picker: Option<Picker>,
+    playing_target: Option<(Anime, Episode)>,
+    playing_url: Option<String>,
+    preferred_lang: String,
     search: String,
     folder: String,
     direct_open: bool,
@@ -453,6 +457,9 @@ impl AniLinux {
             catalog: Catalog::default(),
             detail: None,
             picker: None,
+            playing_target: None,
+            playing_url: None,
+            preferred_lang: "SUB".into(),
             search: String::new(),
             direct_open: false,
             direct_url: String::new(),
@@ -563,6 +570,10 @@ impl AniLinux {
     fn navigate(&mut self, page: Page) {
         self.page = page;
         self.picker = None;
+        if self.playing_target.take().is_some() {
+            self.playing = false;
+            self.playing_url = None;
+        }
         self.sources_seq += 1;
         if matches!(page, Page::Home | Page::Catalog | Page::Releases) {
             self.browse = Browse {
@@ -604,21 +615,20 @@ impl AniLinux {
     }
 
     fn pick(&mut self, anime: Anime, episode: Episode) {
+        if self.playing && self.playing_url.as_deref() == Some(episode.url.as_str()) {
+            return;
+        }
+        self.picker = None;
         self.sources_seq += 1;
-        self.tasks.sources(
-            self.sources_seq,
-            self.definition.clone(),
-            episode.clone(),
-            None,
-        );
-        self.picker = Some(Picker {
-            anime,
-            episode,
-            sources: None,
-            language: String::new(),
-            index: 0,
-            download_tab: false,
-        });
+        self.playing = true;
+        self.playing_url = Some(episode.url.clone());
+        self.playing_target = Some((anime, episode.clone()));
+        self.toast(&format!(
+            "Abriendo episodio {} en línea…",
+            episode.number
+        ));
+        self.tasks
+            .sources(self.sources_seq, self.definition.clone(), episode, None);
     }
 
     fn quick_download(&mut self, anime: Anime, episode: Episode) {
@@ -716,26 +726,65 @@ impl AniLinux {
                 }
                 Event::Sources(id, result) if id == self.sources_seq => match result {
                     Ok(s) => {
-                        if let Some(p) = &mut self.picker {
+                        if let Some((anime, episode)) = self.playing_target.take() {
+                            let langs = s.languages();
+                            let lang = langs
+                                .iter()
+                                .find(|l| l.eq_ignore_ascii_case(&self.preferred_lang))
+                                .or_else(|| langs.first())
+                                .cloned()
+                                .unwrap_or_default();
+                            if let Some(server) = s.visible_servers(&lang, false).into_iter().next()
+                            {
+                                self.tasks.play(
+                                    self.definition.clone(),
+                                    anime,
+                                    episode,
+                                    server,
+                                    self.state.settings.player.clone(),
+                                );
+                            } else {
+                                self.playing = false;
+                                self.playing_url = None;
+                                self.toast(
+                                    "Este episodio no tiene servidores compatibles para reproducir en línea.",
+                                );
+                            }
+                        } else if let Some(p) = &mut self.picker {
                             p.language = s.languages().first().cloned().unwrap_or_default();
                             p.sources = Some(s);
                         }
                     }
                     Err(_) => {
                         self.picker = None;
-                        self.toast("Este episodio no tiene servidores disponibles o no se pudo consultar.");
+                        self.playing_target = None;
+                        self.playing_url = None;
+                        self.playing = false;
+                        self.toast(
+                            "Este episodio no tiene servidores disponibles o no se pudo consultar.",
+                        );
                     }
                 },
                 Event::Quick(a, ep, result) => {
                     self.quick_pending.remove(&ep.url);
                     if let Ok(s) = result {
-                        if let Some(lang) = s.languages().first().cloned() {
+                        let langs = s.languages();
+                        let lang = langs
+                            .iter()
+                            .find(|l| l.eq_ignore_ascii_case(&self.preferred_lang))
+                            .or_else(|| langs.first())
+                            .cloned();
+                        if let Some(lang) = lang {
                             if let Some(server) = s.preferred(&lang) {
                                 self.download(a, ep, server, lang);
+                            } else {
+                                self.toast(
+                                    "Este episodio no tiene servidores compatibles para descargar.",
+                                );
                             }
                         }
                     } else {
-                        self.toast("No se pudo preparar la descarga. Prueba otro episodio o servidor.");
+                        self.toast("No se pudo preparar la descarga. Prueba otro episodio.");
                     }
                 }
                 Event::Update(m) => self.update = m,
@@ -753,6 +802,10 @@ impl AniLinux {
                             self.update_notice.clear();
                             self.sources_seq += 1;
                             self.picker = None;
+                            if self.playing_target.take().is_some() {
+                                self.playing = false;
+                                self.playing_url = None;
+                            }
                             self.detail_seq += 1;
                             self.detail_loading = false;
                             if self.page == Page::Detail {
@@ -771,6 +824,7 @@ impl AniLinux {
                 }
                 Event::Played(history, result) => {
                     self.playing = false;
+                    self.playing_url = None;
                     match result {
                         Ok(confirmation) => {
                             if !history.anime.slug.starts_with("direct-") {
@@ -1444,7 +1498,7 @@ impl AniLinux {
             });
         ui.add_space(20.0);
         if self.show_episodes {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.label(RichText::new("Episodios").size(22.0).strong());
                 let order_label = if self.descending {
                     "Más recientes primero"
@@ -1454,10 +1508,25 @@ impl AniLinux {
                 if pill_button(ui, order_label, self.descending).clicked() {
                     self.descending = !self.descending;
                 }
+                ui.separator();
+                ui.label(RichText::new("Idioma:").size(13.0).color(MUTED));
+                for lang in ["SUB", "DUB"] {
+                    if pill_button(ui, lang, self.preferred_lang == lang).clicked() {
+                        self.preferred_lang = lang.into();
+                    }
+                }
+                ui.separator();
+                ui.label(RichText::new("Reproductor:").size(13.0).color(MUTED));
+                for (val, label) in [("auto", "Auto"), ("mpv", "mpv"), ("vlc", "VLC")] {
+                    if pill_button(ui, label, self.state.settings.player == val).clicked() {
+                        self.state.settings.player = val.into();
+                        self.dirty = true;
+                    }
+                }
             });
             ui.label(
                 RichText::new(
-                    "Pulsa un episodio para ver en línea o descargar. El interruptor inicia o cancela su descarga.",
+                    "Haz clic en un episodio para verlo en línea al instante. Usa el interruptor lateral para descargarlo.",
                 )
                 .size(12.5)
                 .color(MUTED),
@@ -1489,24 +1558,41 @@ impl AniLinux {
                         matches!(j.status, DownloadStatus::Queued | DownloadStatus::Running)
                     });
                     let pending = self.quick_pending.contains(&ep.url);
-                    let (subtitle, sub_color) = if complete {
-                        ("Disponible sin conexión", EMERALD)
+                    let opening =
+                        self.playing && self.playing_url.as_deref() == Some(ep.url.as_str());
+                    let (subtitle, sub_color) = if opening {
+                        ("Abriendo en línea…", CYAN)
+                    } else if complete {
+                        ("Disponible sin conexión · Clic para ver en línea", EMERALD)
                     } else if active {
                         ("Descargando…", AMBER)
                     } else if pending {
-                        ("Preparando…", CYAN)
+                        ("Preparando descarga…", CYAN)
                     } else {
-                        ("Ver en línea o descargar", MUTED)
+                        ("▶ Clic para ver en línea", MUTED)
+                    };
+                    let stroke = if opening {
+                        Stroke::new(1.2_f32, CYAN)
+                    } else {
+                        Stroke::new(1.0_f32, BORDER)
                     };
                     egui::Frame::new()
                         .fill(CARD)
                         .corner_radius(14)
                         .inner_margin(Margin::symmetric(12, 10))
-                        .stroke(Stroke::new(1.0_f32, BORDER))
+                        .stroke(stroke)
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
+                                let mut clicked_thumb = false;
                                 if ui.available_width() > 460.0 {
-                                    self.image(ui, &ep.thumbnail, egui::vec2(112.0, 63.0));
+                                    let thumb_resp = ui
+                                        .scope(|ui| {
+                                            self.image(ui, &ep.thumbnail, egui::vec2(112.0, 63.0));
+                                        })
+                                        .response
+                                        .interact(egui::Sense::click())
+                                        .on_hover_cursor(egui::CursorIcon::PointingHand);
+                                    clicked_thumb = thumb_resp.clicked();
                                 }
                                 let name = if ep.title.is_empty() {
                                     format!("Episodio {}", ep.number)
@@ -1536,7 +1622,7 @@ impl AniLinux {
                                     .response
                                     .interact(egui::Sense::click())
                                     .on_hover_cursor(egui::CursorIcon::PointingHand);
-                                if row_resp.clicked() {
+                                if clicked_thumb || row_resp.clicked() {
                                     self.pick(a.clone(), ep.clone());
                                 }
                                 let mut enabled = complete || active || pending;
@@ -1895,26 +1981,23 @@ impl AniLinux {
                                 p.index = p.index.min(servers.len() - 1);
                                 false
                             };
-                        ui.with_layout(
-                            egui::Layout::left_to_right(egui::Align::Center),
-                            |ui| {
-                                if pill_button(ui, "Ver en línea", !p.download_tab).clicked() {
-                                    p.download_tab = false;
-                                }
-                                if gradient_button(
-                                    ui,
-                                    "⬇ Descargar",
-                                    Color32::from_rgb(24, 96, 222),
-                                    Color32::from_rgb(104, 54, 216),
-                                    false,
-                                    true,
-                                )
-                                .clicked()
-                                {
-                                    action = Some((true, servers[p.index].clone()));
-                                }
-                            },
-                        );
+                        ui.horizontal_wrapped(|ui| {
+                            if pill_button(ui, "Ver en línea", !p.download_tab).clicked() {
+                                p.download_tab = false;
+                            }
+                            if gradient_button(
+                                ui,
+                                "⬇ Descargar",
+                                Color32::from_rgb(24, 96, 222),
+                                Color32::from_rgb(104, 54, 216),
+                                false,
+                                true,
+                            )
+                            .clicked()
+                            {
+                                action = Some((true, servers[p.index].clone()));
+                            }
+                        });
                         if !p.download_tab {
                             self.player_selector_pills(ui);
                         }
