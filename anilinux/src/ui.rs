@@ -250,13 +250,21 @@ fn pill_button(ui: &mut egui::Ui, label: &str, selected: bool) -> egui::Response
         .animate_bool_responsive(response.id, response.hovered());
     if ui.is_rect_visible(rect) {
         if selected {
-            let s = lerp_color(AZURE, Color32::WHITE, hover * 0.1);
-            let e = lerp_color(VIOLET, Color32::WHITE, hover * 0.1);
+            let s = lerp_color(
+                Color32::from_rgb(24, 96, 222),
+                Color32::WHITE,
+                hover * 0.08,
+            );
+            let e = lerp_color(
+                Color32::from_rgb(104, 54, 216),
+                Color32::WHITE,
+                hover * 0.08,
+            );
             paint_gradient_rect(ui.painter(), rect, 16.0, s, e);
             ui.painter().rect_stroke(
                 rect,
                 16,
-                Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(180, 220, 255, 95)),
+                Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(140, 210, 255, 115)),
                 StrokeKind::Inside,
             );
         } else {
@@ -1282,7 +1290,7 @@ impl AniLinux {
             for (index, (title, items)) in sections.iter().enumerate() {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new(title).size(21.5).strong());
-                    if is_home && pill_button(ui, "Ver catálogo →", false).clicked() {
+                    if is_home && pill_button(ui, "Ver catálogo ›", false).clicked() {
                         self.navigate(Page::Catalog);
                     }
                 });
@@ -1440,9 +1448,9 @@ impl AniLinux {
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Episodios").size(22.0).strong());
                 let order_label = if self.descending {
-                    "↓ Más recientes primero"
+                    "Más recientes primero"
                 } else {
-                    "↑ Orden ascendente"
+                    "Orden ascendente"
                 };
                 if pill_button(ui, order_label, self.descending).clicked() {
                     self.descending = !self.descending;
@@ -1450,7 +1458,7 @@ impl AniLinux {
             });
             ui.label(
                 RichText::new(
-                    "Pulsa un episodio para elegir idioma, reproductor y servidor. El interruptor inicia o cancela su descarga.",
+                    "Pulsa un episodio para ver en línea o descargar. El interruptor inicia o cancela su descarga.",
                 )
                 .size(12.5)
                 .color(MUTED),
@@ -1489,7 +1497,7 @@ impl AniLinux {
                     } else if pending {
                         ("Preparando…", CYAN)
                     } else {
-                        ("Elegir idioma y servidor", MUTED)
+                        ("Ver en línea o descargar", MUTED)
                     };
                     egui::Frame::new()
                         .fill(CARD)
@@ -1622,7 +1630,15 @@ impl AniLinux {
                         {
                             self.handle_direct_media(false);
                         }
-                        if gradient_button(ui, "⬇ Descargar", AZURE, VIOLET, false, true).clicked()
+                        if gradient_button(
+                            ui,
+                            "⬇ Descargar",
+                            Color32::from_rgb(24, 96, 222),
+                            Color32::from_rgb(104, 54, 216),
+                            false,
+                            true,
+                        )
+                        .clicked()
                         {
                             self.handle_direct_media(true);
                         }
@@ -1882,29 +1898,34 @@ impl AniLinux {
                     if !p.download_tab {
                         self.player_selector_pills(ui);
                     }
-                    let servers = if p.download_tab {
-                        s.downloads.get(&p.language)
-                    } else {
-                        s.embeds.get(&p.language)
-                    };
-                    let servers = servers.cloned().unwrap_or_default();
+                    let servers = s.visible_servers(&p.language, p.download_tab);
                     if servers.is_empty() {
                         ui.label(
-                            RichText::new("No hay servidores en esta categoría para este idioma.")
+                            RichText::new("No hay enlaces compatibles disponibles para este episodio en este idioma.")
                                 .color(MUTED),
                         );
                     } else {
-                        p.index = p.index.min(servers.len() - 1);
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("Servidor:").color(MUTED));
-                            egui::ComboBox::from_id_salt("server")
-                                .selected_text(&servers[p.index].server)
-                                .show_ui(ui, |ui| {
-                                    for (i, server) in servers.iter().enumerate() {
-                                        ui.selectable_value(&mut p.index, i, &server.server);
-                                    }
+                        if let Some(idx) = servers.iter().position(Server::is_mp4upload) {
+                            p.index = idx;
+                        } else {
+                            p.index = p.index.min(servers.len() - 1);
+                            if servers.len() > 1 {
+                                ui.horizontal(|ui| {
+                                    ui.label(RichText::new("Servidor:").color(MUTED));
+                                    egui::ComboBox::from_id_salt("server")
+                                        .selected_text(&servers[p.index].server)
+                                        .show_ui(ui, |ui| {
+                                            for (i, server) in servers.iter().enumerate() {
+                                                ui.selectable_value(
+                                                    &mut p.index,
+                                                    i,
+                                                    &server.server,
+                                                );
+                                            }
+                                        });
                                 });
-                        });
+                            }
+                        }
                         ui.add_space(10.0);
                         ui.horizontal(|ui| {
                             if !p.download_tab {
@@ -1919,8 +1940,15 @@ impl AniLinux {
                                     action = Some((false, servers[p.index].clone()));
                                 }
                             }
-                            if gradient_button(ui, "⬇ Descargar", AZURE, VIOLET, false, true)
-                                .clicked()
+                            if gradient_button(
+                                ui,
+                                "⬇ Descargar",
+                                Color32::from_rgb(24, 96, 222),
+                                Color32::from_rgb(104, 54, 216),
+                                false,
+                                true,
+                            )
+                            .clicked()
                             {
                                 action = Some((true, servers[p.index].clone()));
                             }
