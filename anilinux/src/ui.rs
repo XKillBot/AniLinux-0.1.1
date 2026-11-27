@@ -213,18 +213,18 @@ fn gradient_button(
             paint_gradient_rect(ui.painter(), rect, 19.0, start, end);
             ui.painter().rect_stroke(
                 rect,
-                19.0,
+                19,
                 Stroke::new(
-                    1.0,
+                    1.0_f32,
                     Color32::from_rgba_unmultiplied(255, 255, 255, (42.0 + hover * 48.0) as u8),
                 ),
                 StrokeKind::Inside,
             );
         } else {
             ui.painter()
-                .rect_filled(rect, 19.0, Color32::from_rgb(32, 37, 58));
+                .rect_filled(rect, 19, Color32::from_rgb(32, 37, 58));
             ui.painter()
-                .rect_stroke(rect, 19.0, Stroke::new(1.0, BORDER), StrokeKind::Inside);
+                .rect_stroke(rect, 19, Stroke::new(1.0_f32, BORDER), StrokeKind::Inside);
         }
         let text_pos = egui::pos2(
             rect.center().x - galley.size().x * 0.5,
@@ -255,16 +255,16 @@ fn pill_button(ui: &mut egui::Ui, label: &str, selected: bool) -> egui::Response
             paint_gradient_rect(ui.painter(), rect, 16.0, s, e);
             ui.painter().rect_stroke(
                 rect,
-                16.0,
-                Stroke::new(1.0, Color32::from_rgba_unmultiplied(180, 220, 255, 95)),
+                16,
+                Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(180, 220, 255, 95)),
                 StrokeKind::Inside,
             );
         } else {
             let fill = lerp_color(CARD, CARD_HOVER, hover);
             let border = lerp_color(BORDER, CYAN, hover * 0.55);
-            ui.painter().rect_filled(rect, 16.0, fill);
+            ui.painter().rect_filled(rect, 16, fill);
             ui.painter()
-                .rect_stroke(rect, 16.0, Stroke::new(1.0, border), StrokeKind::Inside);
+                .rect_stroke(rect, 16, Stroke::new(1.0_f32, border), StrokeKind::Inside);
         }
         let pos = egui::pos2(
             rect.center().x - galley.size().x * 0.5,
@@ -291,8 +291,8 @@ fn nav_button(ui: &mut egui::Ui, label: &str, active: bool, width: f32) -> egui:
             );
             ui.painter().rect_stroke(
                 rect,
-                12.0,
-                Stroke::new(1.0, Color32::from_rgba_unmultiplied(0, 226, 210, 95)),
+                12,
+                Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(0, 226, 210, 95)),
                 StrokeKind::Inside,
             );
             let bar = Rect::from_min_size(
@@ -303,7 +303,7 @@ fn nav_button(ui: &mut egui::Ui, label: &str, active: bool, width: f32) -> egui:
         } else if hover > 0.01 {
             ui.painter().rect_filled(
                 rect,
-                12.0,
+                12,
                 lerp_color(PANEL, Color32::from_rgb(28, 34, 58), hover),
             );
         }
@@ -329,7 +329,7 @@ fn badge_pill(ui: &mut egui::Ui, text: &str, fg: Color32, bg: Color32) {
         .corner_radius(CornerRadius::same(99))
         .inner_margin(Margin::symmetric(10, 4))
         .stroke(Stroke::new(
-            1.0,
+            1.0_f32,
             Color32::from_rgba_unmultiplied(fg.r(), fg.g(), fg.b(), 70),
         ))
         .show(ui, |ui| {
@@ -342,9 +342,9 @@ fn gradient_progress_bar(ui: &mut egui::Ui, progress: f32) {
     let width = ui.available_width().max(80.0);
     let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 12.0), egui::Sense::hover());
     if ui.is_rect_visible(rect) {
-        ui.painter().rect_filled(rect, 6.0, INPUT_BG);
+        ui.painter().rect_filled(rect, 6, INPUT_BG);
         ui.painter()
-            .rect_stroke(rect, 6.0, Stroke::new(1.0, BORDER), StrokeKind::Inside);
+            .rect_stroke(rect, 6, Stroke::new(1.0_f32, BORDER), StrokeKind::Inside);
         let fill_w = (rect.width() * p).max(if p > 0.0 { 10.0 } else { 0.0 });
         if fill_w > 0.5 {
             let fill_rect = Rect::from_min_size(rect.min, egui::vec2(fill_w, rect.height()));
@@ -367,41 +367,41 @@ impl AniLinux {
         visuals.window_fill = PANEL;
         visuals.window_corner_radius = CornerRadius::same(18);
         visuals.window_shadow = soft_shadow();
-        visuals.window_stroke = Stroke::new(1.0, BORDER);
+        visuals.window_stroke = Stroke::new(1.0_f32, BORDER);
         visuals.menu_corner_radius = CornerRadius::same(12);
         visuals.popup_shadow = soft_shadow();
         visuals.extreme_bg_color = INPUT_BG;
         visuals.selection.bg_fill = Color32::from_rgb(24, 78, 126);
-        visuals.selection.stroke = Stroke::new(1.0, CYAN);
+        visuals.selection.stroke = Stroke::new(1.0_f32, CYAN);
 
         let r12 = CornerRadius::same(12);
         visuals.widgets.noninteractive.bg_fill = CARD;
         visuals.widgets.noninteractive.weak_bg_fill = CARD;
-        visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, BORDER);
+        visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0_f32, BORDER);
         visuals.widgets.noninteractive.corner_radius = r12;
 
         visuals.widgets.inactive.bg_fill = CARD;
         visuals.widgets.inactive.weak_bg_fill = CARD;
-        visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, BORDER);
-        visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, TEXT_MAIN);
+        visuals.widgets.inactive.bg_stroke = Stroke::new(1.0_f32, BORDER);
+        visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, TEXT_MAIN);
         visuals.widgets.inactive.corner_radius = r12;
 
         visuals.widgets.hovered.bg_fill = CARD_HOVER;
         visuals.widgets.hovered.weak_bg_fill = CARD_HOVER;
-        visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, CYAN);
-        visuals.widgets.hovered.fg_stroke = Stroke::new(1.2, Color32::WHITE);
+        visuals.widgets.hovered.bg_stroke = Stroke::new(1.0_f32, CYAN);
+        visuals.widgets.hovered.fg_stroke = Stroke::new(1.2_f32, Color32::WHITE);
         visuals.widgets.hovered.corner_radius = r12;
         visuals.widgets.hovered.expansion = 1.0;
 
         visuals.widgets.active.bg_fill = Color32::from_rgb(20, 92, 120);
         visuals.widgets.active.weak_bg_fill = Color32::from_rgb(20, 92, 120);
-        visuals.widgets.active.bg_stroke = Stroke::new(1.2, CYAN);
-        visuals.widgets.active.fg_stroke = Stroke::new(1.2, Color32::WHITE);
+        visuals.widgets.active.bg_stroke = Stroke::new(1.2_f32, CYAN);
+        visuals.widgets.active.fg_stroke = Stroke::new(1.2_f32, Color32::WHITE);
         visuals.widgets.active.corner_radius = r12;
 
         visuals.widgets.open.bg_fill = CARD_HOVER;
         visuals.widgets.open.weak_bg_fill = CARD_HOVER;
-        visuals.widgets.open.bg_stroke = Stroke::new(1.0, AZURE);
+        visuals.widgets.open.bg_stroke = Stroke::new(1.0_f32, AZURE);
         visuals.widgets.open.corner_radius = r12;
 
         cc.egui_ctx.set_visuals(visuals);
@@ -887,11 +887,11 @@ impl AniLinux {
                     Color32::from_rgb(20, 26, 46),
                 );
                 ui.painter()
-                    .rect_stroke(rect, 10.0, Stroke::new(1.0, BORDER), StrokeKind::Inside);
+                    .rect_stroke(rect, 10, Stroke::new(1.0_f32, BORDER), StrokeKind::Inside);
                 ui.painter().circle_stroke(
                     rect.center(),
                     18.0,
-                    Stroke::new(1.8, Color32::from_rgba_unmultiplied(0, 226, 210, 90)),
+                    Stroke::new(1.8_f32, Color32::from_rgba_unmultiplied(0, 226, 210, 90)),
                 );
                 ui.painter().text(
                     rect.center(),
@@ -911,7 +911,7 @@ impl AniLinux {
                 .fill(CARD)
                 .corner_radius(14)
                 .inner_margin(9)
-                .stroke(Stroke::new(1.0, BORDER))
+                .stroke(Stroke::new(1.0_f32, BORDER))
                 .shadow(soft_shadow())
                 .begin(ui);
             {
@@ -1005,7 +1005,7 @@ impl AniLinux {
                 egui::Frame::new()
                     .fill(PANEL)
                     .inner_margin(Margin::symmetric(16, 18))
-                    .stroke(Stroke::new(1.0, BORDER)),
+                    .stroke(Stroke::new(1.0_f32, BORDER)),
             )
             .show(ctx, |ui| {
                 ui.add_space(4.0);
@@ -1075,7 +1075,7 @@ impl AniLinux {
                 egui::Frame::new()
                     .fill(PANEL)
                     .inner_margin(Margin::symmetric(22, 14))
-                    .stroke(Stroke::new(1.0, BORDER)),
+                    .stroke(Stroke::new(1.0_f32, BORDER)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -1097,7 +1097,7 @@ impl AniLinux {
                             .fill(INPUT_BG)
                             .corner_radius(CornerRadius::same(19))
                             .inner_margin(Margin::symmetric(14, 7))
-                            .stroke(Stroke::new(1.0, BORDER));
+                            .stroke(Stroke::new(1.0_f32, BORDER));
                         pill_frame.show(ui, |ui| {
                             let response = ui.add_sized(
                                 [(width - 28.0).max(60.0), 22.0],
@@ -1119,7 +1119,7 @@ impl AniLinux {
                         .fill(Color32::from_rgb(20, 48, 70))
                         .inner_margin(Margin::symmetric(14, 10))
                         .corner_radius(12)
-                        .stroke(Stroke::new(1.0, CYAN))
+                        .stroke(Stroke::new(1.0_f32, CYAN))
                         .show(ui, |ui| {
                             ui.horizontal_wrapped(|ui| {
                                 ui.label(
@@ -1162,8 +1162,8 @@ impl AniLinux {
                 );
                 ui.painter().rect_stroke(
                     hero_rect,
-                    16.0,
-                    Stroke::new(1.0, Color32::from_rgba_unmultiplied(88, 166, 255, 70)),
+                    16,
+                    Stroke::new(1.0_f32, Color32::from_rgba_unmultiplied(88, 166, 255, 70)),
                     StrokeKind::Inside,
                 );
                 ui.painter().text(
@@ -1188,7 +1188,7 @@ impl AniLinux {
                 .fill(PANEL)
                 .corner_radius(14)
                 .inner_margin(Margin::symmetric(14, 10))
-                .stroke(Stroke::new(1.0, BORDER))
+                .stroke(Stroke::new(1.0_f32, BORDER))
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
                         let mut genre = self.browse.genre.clone();
@@ -1352,7 +1352,7 @@ impl AniLinux {
             .fill(PANEL)
             .corner_radius(16)
             .inner_margin(18)
-            .stroke(Stroke::new(1.0, BORDER))
+            .stroke(Stroke::new(1.0_f32, BORDER))
             .shadow(soft_shadow())
             .show(ui, |ui| {
                 let compact = ui.available_width() < 540.0;
@@ -1495,7 +1495,7 @@ impl AniLinux {
                         .fill(CARD)
                         .corner_radius(14)
                         .inner_margin(Margin::symmetric(12, 10))
-                        .stroke(Stroke::new(1.0, BORDER))
+                        .stroke(Stroke::new(1.0_f32, BORDER))
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 if ui.available_width() > 460.0 {
@@ -1575,7 +1575,7 @@ impl AniLinux {
             .fill(PANEL)
             .corner_radius(14)
             .inner_margin(Margin::symmetric(16, 12))
-            .stroke(Stroke::new(1.0, BORDER))
+            .stroke(Stroke::new(1.0_f32, BORDER))
             .show(ui, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     self.player_selector_pills(ui);
@@ -1636,7 +1636,7 @@ impl AniLinux {
                 .fill(CARD)
                 .corner_radius(16)
                 .inner_margin(26)
-                .stroke(Stroke::new(1.0, BORDER))
+                .stroke(Stroke::new(1.0_f32, BORDER))
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     ui.label(
@@ -1658,7 +1658,7 @@ impl AniLinux {
                 .fill(CARD)
                 .inner_margin(18)
                 .corner_radius(16)
-                .stroke(Stroke::new(1.0, BORDER))
+                .stroke(Stroke::new(1.0_f32, BORDER))
                 .shadow(soft_shadow())
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
@@ -1742,7 +1742,7 @@ impl AniLinux {
             .fill(PANEL)
             .corner_radius(16)
             .inner_margin(20)
-            .stroke(Stroke::new(1.0, BORDER))
+            .stroke(Stroke::new(1.0_f32, BORDER))
             .shadow(soft_shadow())
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
@@ -1815,7 +1815,7 @@ impl AniLinux {
             .fill(PANEL)
             .corner_radius(16)
             .inner_margin(20)
-            .stroke(Stroke::new(1.0, BORDER))
+            .stroke(Stroke::new(1.0_f32, BORDER))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.label(RichText::new("Fuente de contenido").size(20.0).strong());
@@ -1974,9 +1974,9 @@ fn toggle(ui: &mut egui::Ui, value: &mut bool) -> egui::Response {
             paint_gradient_rect(ui.painter(), rect, 13.0, c0, c1);
         } else {
             ui.painter()
-                .rect_filled(rect, 13.0, Color32::from_rgb(48, 54, 78));
+                .rect_filled(rect, 13, Color32::from_rgb(48, 54, 78));
             ui.painter()
-                .rect_stroke(rect, 13.0, Stroke::new(1.0, BORDER), StrokeKind::Inside);
+                .rect_stroke(rect, 13, Stroke::new(1.0_f32, BORDER), StrokeKind::Inside);
         }
         let x = rect.left() + 13.0 + t * (rect.width() - 26.0);
         let thumb_color = lerp_color(Color32::from_rgb(198, 204, 226), Color32::WHITE, t);
@@ -2011,7 +2011,7 @@ impl eframe::App for AniLinux {
                 egui::Frame::new()
                     .fill(PANEL)
                     .inner_margin(Margin::symmetric(18, 9))
-                    .stroke(Stroke::new(1.0, BORDER)),
+                    .stroke(Stroke::new(1.0_f32, BORDER)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -2035,7 +2035,7 @@ impl eframe::App for AniLinux {
                         .fill(Color32::from_rgb(54, 24, 34))
                         .corner_radius(12)
                         .inner_margin(Margin::symmetric(14, 10))
-                        .stroke(Stroke::new(1.0, CORAL))
+                        .stroke(Stroke::new(1.0_f32, CORAL))
                         .show(ui, |ui| {
                             ui.horizontal_wrapped(|ui| {
                                 ui.colored_label(Color32::from_rgb(255, 190, 185), error);
