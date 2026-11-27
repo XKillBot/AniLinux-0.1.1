@@ -1,0 +1,46 @@
+{
+  "id": "animeav1",
+  "version": "1.0.0",
+  "version_code": 1,
+  "base_url": "https://animeav1.com",
+  "script_marker": "node_ids",
+  "selectors": {
+    "scripts": "script",
+    "cards": "a[href*='/media/']",
+    "image": "img"
+  },
+  "routes": {
+    "catalog": "/catalogo",
+    "media": "/media/{slug}",
+    "episode": "/media/{slug}/{number}",
+    "search_param": "search",
+    "page_param": "page",
+    "genre_param": "genre",
+    "status_param": "status",
+    "airing_value": "emision"
+  },
+  "fields": {
+    "results": "results",
+    "latest": "latestMedia",
+    "recent": "latestEpisodes",
+    "media": "media",
+    "episodes": "episodes",
+    "embeds": "embeds",
+    "downloads": "downloads",
+    "genres": "genresIdsMap",
+    "pagination": "pagination"
+  },
+  "assets": {
+    "cover": "https://cdn.animeav1.com/covers/{id}.jpg",
+    "banner": "https://cdn.animeav1.com/backdrops/{id}.jpg",
+    "thumbnail": "https://cdn.animeav1.com/screenshots/{id}/{number}.jpg"
+  },
+  "resolvers": [
+    {
+      "host": "player.zilla-networks.com",
+      "path_pattern": "^/play/([a-fA-F0-9]{32})/?$",
+      "replacement": "/m3u8/$1",
+      "kind": "hls"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AniLinux
+Comment=Explora y reproduce anime en Linux
+Exec=anilinux
+Icon=anilinux
+Terminal=false
+Categories=AudioVideo;Video;Network;
+StartupWMClass=anilinux

@@ -1,0 +1,37 @@
+[package]
+name = "anilinux"
+version = "0.1.1"
+edition = "2021"
+rust-version = "1.88"
+description = "AniLinux: cliente nativo de anime para Linux"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+eframe = { version = "0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+egui = "0.31.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "fs", "process", "io-util", "net", "sync", "time"] }
+tokio-util = "0.7"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json", "gzip", "brotli", "deflate"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+json5 = "0.4"
+scraper = "0.23"
+regex = "1"
+sha2 = "0.10"
+semver = "1"
+url = { version = "2", features = ["serde"] }
+dirs = "6"
+futures-util = "0.3"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+[[example]]
+name = "probe"
+path = "examples/probe.rs"
